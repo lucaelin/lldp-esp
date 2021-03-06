@@ -1,0 +1,31 @@
+menu "Display Configuration"
+    comment "Waveshare EPD Pins"
+    config EINK_SPI_MOSI
+        int "EPD SPI: MOSI (DIN)"
+        range 0 35
+        default 2
+    config EINK_SPI_CLK
+        int "EPD SPI: Clock"
+        range 0 37
+        default 14
+    config EINK_SPI_CS
+        int "EPD SPI: Chip Select"
+        range 0 34
+        default 5
+    config EINK_DC
+        int "EPD: DC"
+        range 0 34
+        default 15
+    config EINK_RST
+        int "EPD: Reset"
+        range 0 34
+        default 16
+    config EINK_BUSY
+        int "EPD: Busy signal"
+        range 0 39
+        default 13
+    config EINK_ROTATION
+        int "EPD: Rotation"
+        range 0 3
+        default 0
+endmenu
