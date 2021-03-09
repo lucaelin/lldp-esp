@@ -50,7 +50,7 @@ const characteristics = [{
         || Object.values(lldp.find(v=>v.name==='Chassis ID')?.value || {})?.[0],
       'Port': lldp.find(v=>v.name==='Port description')?.value
         || Object.values(lldp.find(v=>v.name==='Port ID')?.value || {})?.[0],
-      'Port\u00a0VLAN': lldp.find(v=>
+      'Port VLAN': lldp.find(v=>
         v.name==='Vendor Specific'
         && v.value.subtypeName==='Port VLAN ID'
       )?.value?.value,
@@ -59,7 +59,12 @@ const characteristics = [{
         && v.value.subtypeName==='Network Policy'
         && v.value.value['Application Type']==='Voice'
       )?.value?.value?.['VLAN ID'],
-    }
+    };
+
+    lldp.filter(v=>
+      v.name==='Vendor Specific'
+      && v.value.subtypeName==='VLAN Name'
+    ).forEach(v=>tiles['VLAN '+v.id] = v.name);
 
     const detail = lldp.map(tlv=>`${tlv.name}: ${JSON.stringify(tlv.value, null, 2)}`).join('\n');
 
