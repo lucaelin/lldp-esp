@@ -53,7 +53,7 @@ export default {
     lldp.filter(v=>
       v.name==='Vendor Specific'
       && v.value.subtypeName === 'VLAN Name'
-    ).forEach(v=>extendObj(vlans, v.id, {name: v.name, announced: true}));
+    ).forEach(v=>extendObj(vlans, v.value.value.id, {name: v.value.value.name, announced: true}));
 
     detectedVlans.filter(v=>v!==0).forEach(v=>extendObj(vlans, v, {detected: true, tagged: true}));
     if (detectedVlans[0]===0) extendObj(vlans, portVLAN || 0, {detected: true, untagged: true});
