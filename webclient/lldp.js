@@ -25,11 +25,13 @@ const parseTlvValue = {
     const subtype = packet.getUint8(0);
     const data = dvSlice(packet, 1);
     switch (subtype) {
-      case 0x01: return {'entPhysicalAlias': getHex(data)};
-      case 0x02: return {'ifAlias': getHex(data)};
-      case 0x03: return {'entPhysicalAlias': getHex(data)};
-      case 0x04: return {'MAC': getMac(data)};
-      case 0x05: return {'Management address': getHex(data)};
+      case 0x01: return {'Chassis component': getHex(data)};
+      case 0x02: return {'Interface alias': getHex(data)};
+      case 0x03: return {'Port component': getHex(data)};
+      case 0x04: return {'MAC address': getMac(data)};
+      case 0x05: return {'Network address': getHex(data)};
+      case 0x06: return {'Interface name': getString(data)};
+      case 0x07: return {'Locally assigned': getString(data)};
     }
     return {'Unknown': getHex(packet)};
   }],
@@ -37,10 +39,12 @@ const parseTlvValue = {
     const subtype = packet.getUint8(0);
     const data = dvSlice(packet, 1);
     switch (subtype) {
-      case 0x01: return {'ifAlias': getHex(data)};
-      case 0x02: return {'entPhysicalAlias': getHex(data)};
-      case 0x03: return {'MAC': getMac(data)};
-      case 0x04: return {'Management address': getHex(data)};
+      case 0x01: return {'Interface alias': getHex(data)};
+      case 0x02: return {'Port component': getHex(data)};
+      case 0x03: return {'MAC address': getMac(data)};
+      case 0x04: return {'Network address': getHex(data)};
+      case 0x05: return {'Interface name': getString(data)};
+      case 0x06: return {'Agent circuit ID': getHex(data)};
       case 0x07: return {'Locally assigned': getString(data)};
     }
     return {'Unknown': getHex(packet)};
