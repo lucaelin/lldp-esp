@@ -25,29 +25,29 @@ const parseTlvValue = {
     const subtype = packet.getUint8(0);
     const data = dvSlice(packet, 1);
     switch (subtype) {
-      case 0x01: return {'Chassis component': getHex(data)};
-      case 0x02: return {'Interface alias': getHex(data)};
-      case 0x03: return {'Port component': getHex(data)};
-      case 0x04: return {'MAC address': getMac(data)};
-      case 0x05: return {'Network address': getHex(data)};
-      case 0x06: return {'Interface name': getString(data)};
-      case 0x07: return {'Locally assigned': getString(data)};
+      case 0x01: return {type: 'Chassis component', value: getHex(data)};
+      case 0x02: return {type: 'Interface alias',   value: getHex(data)};
+      case 0x03: return {type: 'Port component',    value: getHex(data)};
+      case 0x04: return {type: 'MAC address',       value: getMac(data)};
+      case 0x05: return {type: 'Network address',   value: getHex(data)};
+      case 0x06: return {type: 'Interface name',    value: getString(data)};
+      case 0x07: return {type: 'Locally assigned',  value: getString(data)};
     }
-    return {'Unknown': getHex(packet)};
+    return {type: 'Unknown', value: getHex(packet)};
   }],
   0x02: ['Port ID', (packet) => {
     const subtype = packet.getUint8(0);
     const data = dvSlice(packet, 1);
     switch (subtype) {
-      case 0x01: return {'Interface alias': getHex(data)};
-      case 0x02: return {'Port component': getHex(data)};
-      case 0x03: return {'MAC address': getMac(data)};
-      case 0x04: return {'Network address': getHex(data)};
-      case 0x05: return {'Interface name': getString(data)};
-      case 0x06: return {'Agent circuit ID': getHex(data)};
-      case 0x07: return {'Locally assigned': getString(data)};
+      case 0x01: return {type: 'Interface alias',   value: getHex(data)};
+      case 0x02: return {type: 'Port component',    value: getHex(data)};
+      case 0x03: return {type: 'MAC address',       value: getMac(data)};
+      case 0x04: return {type: 'Network address',   value: getHex(data)};
+      case 0x05: return {type: 'Interface name',    value: getString(data)};
+      case 0x06: return {type: 'Agent circuit ID',  value: getHex(data)};
+      case 0x07: return {type: 'Locally assigned',  value: getString(data)};
     }
-    return {'Unknown': getHex(packet)};
+    return {type: 'Unknown', value: getHex(packet)};
   }],
   0x03: ['Time To Live', (packet) => packet.getUint16()],
   0x04: ['Port description', (packet) => getString(packet)],

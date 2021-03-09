@@ -69,6 +69,7 @@ main > div .tile {
   vertical-align: middle;
   line-height: 90%;
   font-size: calc(0.3 * var(--size));
+  white-space: pre-wrap;
 }
 .tile .detail {
   display: none;

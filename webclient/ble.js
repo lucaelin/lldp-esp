@@ -62,7 +62,7 @@ export async function watchCharacteristic(uuid, cb) {
   const isFirstWatch = !handles[uuid];
   if (!handles[uuid]) handles[uuid] = [];
   handles[uuid].push(cb);
-  if (!isFirstWatch) setupWatchCharacteristic(uuid);
+  if (service && isFirstWatch) setupWatchCharacteristic(uuid);
 }
 
 async function setupWatchCharacteristic(uuid) {
@@ -76,7 +76,6 @@ async function setupWatchCharacteristic(uuid) {
 
   const handleValueChanged = async (e) => {
     if (service !== createdService && fallbackInterval) return window.clearInterval(fallbackInterval);
-    console.log(e);
     const isNotify = e && e.type==='characteristicvaluechanged' ? true : false;
     const isNotifyFullValue = isNotify && e.target.value.byteLength !== 20 ? true : false; // see WebBluetoothCG/web-bluetooth/issues/274
     console.log('Handling value change', uuid, 'isNotify:', isNotify);
