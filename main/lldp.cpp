@@ -3,8 +3,11 @@
 #include "epd.h"
 #include "esp_event.h"
 #include "esp_log.h"
+#include "vlan.h"
 
 static const char *TAG = "lldp";
+
+eth_frame last_lldp_frame;
 
 void lldp_tlv_handler(const lldp_tlv *tlv) {
     switch (tlv->type) {
@@ -53,8 +56,21 @@ void lldp_tlv_handler(const lldp_tlv *tlv) {
 
 void ethertype_lldp_handler(const eth_frame *frame) {
     ESP_LOGI(TAG, "Ethernet LLDP");
+
+    if (last_lldp_frame.length == frame->length) {
+        if (!memcmp(last_lldp_frame.payload, frame->payload, last_lldp_frame.length)) return;
+    }
+
     ESP_LOG_BUFFER_HEXDUMP(TAG, frame->payload, frame->length, ESP_LOG_INFO);
+
+    free(last_lldp_frame.payload);
+    last_lldp_frame.length = frame->length;
+    last_lldp_frame.payload = (uint8_t*) malloc(frame->length);
+    memcpy(last_lldp_frame.payload, frame->payload, frame->length);
+
     gatts_webble_set_and_notify_value(IDX_CHAR_VAL_LLDP, frame->length, frame->payload);
+    ethertype_vlan_reset();
+
     lldp_tlv packet;
     packet.type = 1;
     uint8_t num_tlvs = 0;
@@ -71,6 +87,7 @@ void ethertype_lldp_handler(const eth_frame *frame) {
 
 void ethertype_lldp_reset() {
     uint8_t value[] = {0x00};
+    last_lldp_frame.length = 0;
     gatts_webble_set_and_notify_value(IDX_CHAR_VAL_LLDP, sizeof(value), value);
     epd_clearLine(1);
     epd_clearLine(2);

@@ -81,11 +81,17 @@ static esp_err_t eth_frame_handler(esp_eth_handle_t eth_handle, uint8_t *buffer,
     frame.length = len - (6 + 6 + 2);
     frame.payload = &(buffer[14]);
 
+    if (frame.type <= 0x05DC) {
+        frame.type = 0;
+        frame.payload = &(buffer[12]);
+        frame.length += 2;
+    }
+
     // strip vlan id from payload
     if (frame.type == ETHERTYPE_VLAN) {
         frame.vlan = (frame.payload[1] + frame.payload[0] * 0x100) & 0x0FFF;
-        ethertype_vlan_handler(&frame);
         frame.type = frame.payload[3] + frame.payload[2] * 0x100;
+        ethertype_vlan_handler(&frame);
         frame.payload = &(frame.payload[4]);
         frame.length -= 4;
     } else {

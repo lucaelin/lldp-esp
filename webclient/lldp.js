@@ -220,7 +220,8 @@ export function parseLLDP(packet) {
   //console.log(getHex(packet))
   const tlvs = [];
   let offset = 0;
-  while(offset < packet.byteLength) {
+
+  while(offset + 1 < packet.byteLength) {
     const tlv = parseTLV(packet, offset);
     if (tlv.type === 0) break;
     tlvs.push(tlv);
