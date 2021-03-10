@@ -21,7 +21,7 @@ export default {
   },
   update: (c)=>{
     const lldp = parseLLDP(c.value.lldp);
-    const lldpStatus = c.value.lldp && c.value.lldp.byteLength ? lldp.length ? 'good' : 'ok' : 'unknown';
+    const lldpStatus = c.value.lldp && c.value.lldp.byteLength ? lldp.length ? 'good' : c.value.lldp.byteLength > 2 ? 'bad' : 'ok' : 'unknown';
     const vlanStatus = c.value.vlan && c.value.vlan.byteLength ? !(c.value.vlan.byteLength % 3) ? 'good' : 'bad' : 'unknown';
     const detectedVlans = vlanStatus === 'good' ?
       parseVLAN(c.value.vlan)
@@ -33,6 +33,9 @@ export default {
         || Object.values(lldp.find(v=>v.name==='Chassis ID')?.value || {})?.[0],
       'Port': lldp.find(v=>v.name==='Port description')?.value
         || Object.values(lldp.find(v=>v.name==='Port ID')?.value || {})?.[0],
+      'POE': lldp.find(v=>(v.name==='Vendor Specific'
+        && v.value.subtypeName === 'Extended Power-via-MDI')
+      )?.value?.value?.['Power value'],
     };
 
     const vlans = {};
@@ -63,7 +66,7 @@ export default {
     console.log('vlans', vlans);
 
     return html`
-      ${tile('LLDP', 'GOOD', 'good', detail)}
+      ${tile('LLDP', lldpStatus.toUpperCase(), lldpStatus, detail)}
       ${tile('VLAN', vlanStatus.toUpperCase(), vlanStatus, detectedVlans)}
       ${Object.entries(tiles).map(([title, value])=>value?tile(title, value, 'ok'):'')}
       ${Object.entries(vlans).map(([id, vlan])=>tile(
