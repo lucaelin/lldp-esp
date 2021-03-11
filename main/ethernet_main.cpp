@@ -24,6 +24,22 @@
 
 static const char *TAG = "eth_ble";
 
+#define CONFIG_POWER_EXTERNAL_POWER_PIN 39
+uint8_t eth_gatts_value[2] = {0x00, 0x00};
+
+static bool power_event_handler() {
+    uint8_t power = gpio_get_level((gpio_num_t) CONFIG_POWER_EXTERNAL_POWER_PIN);
+    //gatts_webble_set_and_notify_value(IDX_CHAR_VAL_ETH, sizeof(eth_gatts_value), eth_gatts_value);
+    if (power == eth_gatts_value[1]) return false;
+
+    eth_gatts_value[1] = power;
+    if (power) epd_setLine(5, "Power", "External");
+    else epd_setLine(5, "Power", "Internal");
+    gatts_webble_set_and_notify_value(IDX_CHAR_VAL_ETH, sizeof(eth_gatts_value), eth_gatts_value);
+    epd_update();
+
+    return true;
+}
 
 /** Event handler for Ethernet events */
 static void eth_event_handler(void *arg, esp_event_base_t event_base,
@@ -32,8 +48,6 @@ static void eth_event_handler(void *arg, esp_event_base_t event_base,
     uint8_t mac_addr[6] = {0};
     /* we can get the ethernet driver handle from event data */
     esp_eth_handle_t eth_handle = *(esp_eth_handle_t *)event_data;
-
-    uint8_t eth_gatts_value[1] = {0x00};
 
     switch (event_id) {
     case ETHERNET_EVENT_CONNECTED:
@@ -45,7 +59,6 @@ static void eth_event_handler(void *arg, esp_event_base_t event_base,
         ESP_LOGI(TAG, "Ethernet Link Up");
         ESP_LOGI(TAG, "Ethernet HW Addr %02x:%02x:%02x:%02x:%02x:%02x",
                  mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
-        eth_gatts_value[0] = 0x04;
     break;
     case ETHERNET_EVENT_DISCONNECTED:
         ESP_LOGI(TAG, "Ethernet Link Down");
@@ -65,6 +78,7 @@ static void eth_event_handler(void *arg, esp_event_base_t event_base,
     default:
     break;
     }
+    power_event_handler();
     epd_update();
     gatts_webble_set_and_notify_value(IDX_CHAR_VAL_ETH, sizeof(eth_gatts_value), eth_gatts_value);
 }
@@ -72,6 +86,7 @@ static void eth_event_handler(void *arg, esp_event_base_t event_base,
 
 static esp_err_t eth_frame_handler(esp_eth_handle_t eth_handle, uint8_t *buffer, uint32_t len, void* priv)
 {
+    power_event_handler();
     assert(len >= sizeof(eth_frame));
     eth_frame frame;
     memcpy(&frame.dst, &(buffer[0]), 6);
@@ -120,6 +135,10 @@ extern "C" void app_main(void)
 
     epd_init();
     ESP_ERROR_CHECK(gatts_webble_init());
+
+    // setup external power sense
+    gpio_set_intr_type((gpio_num_t) CONFIG_POWER_EXTERNAL_POWER_PIN, GPIO_INTR_ANYEDGE);
+    gpio_set_direction((gpio_num_t) CONFIG_POWER_EXTERNAL_POWER_PIN, GPIO_MODE_INPUT);
 
     vTaskDelay(pdMS_TO_TICKS(200));
 
