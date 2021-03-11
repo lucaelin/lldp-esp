@@ -26,49 +26,59 @@ export default {
     const detectedVlans = vlanStatus === 'good' ?
       parseVLAN(c.value.vlan)
     : [];
-    console.log('detectedVlans', detectedVlans);
 
-    const tiles = {
-      'Switch': lldp.find(v=>v.name==='System name')?.value
-        || Object.values(lldp.find(v=>v.name==='Chassis ID')?.value || {})?.[0],
-      'Port': lldp.find(v=>v.name==='Port description')?.value
-        || Object.values(lldp.find(v=>v.name==='Port ID')?.value || {})?.[0],
-      'POE': lldp.find(v=>(v.name==='Vendor Specific'
-        && v.value.subtypeName === 'Extended Power-via-MDI')
-      )?.value?.value?.['Power value'],
-    };
+    const cleanValues = {
+      'System name': lldp.find(v=>v.name==='System name')?.value,
+      'Chassis ID': lldp.find(v=>v.name==='Chassis ID')?.value?.value,
+      'Port description': lldp.find(v=>v.name==='Port description')?.value,
+      'Port ID': lldp.find(v=>v.name==='Port ID')?.value?.value,
+      'Extended Power-via-MDI': lldp.find(v=>(
+        v.name==='Vendor Specific'
+        && v.value.subtypeName === 'Extended Power-via-MDI'
+      )),
+      'Port VLAN ID': lldp.find(v=>
+        v.name==='Vendor Specific'
+        && v.value.subtypeName === 'Port VLAN ID'
+      )?.value?.value,
+      'Network Policy Voice': lldp.find(v=>
+        v.name==='Vendor Specific'
+        && v.value.subtypeName === 'Network Policy'
+        && v.value.value['Application Type']==='Voice'
+      ),
+      'VLAN Name': lldp.filter(v=>
+        v.name==='Vendor Specific'
+        && v.value.subtypeName === 'VLAN Name'
+      )
+    }
+
+    const tiles = [
+      tile('Switch', cleanValues['System name'] || cleanValues['Chassis ID'], 'ok', cleanValues['Chassis ID']),
+      tile('Port', cleanValues['Port description'] || cleanValues['Port ID'], 'ok', cleanValues['Port ID']),
+      tile('POE', cleanValues['Extended Power-via-MDI']?.value?.value?.['Power value'], 'good', cleanValues['Extended Power-via-MDI'])
+    ];
 
     const vlans = {};
 
-    const portVLAN = lldp.find(v=>
-      v.name==='Vendor Specific'
-      && v.value.subtypeName === 'Port VLAN ID'
-    )?.value?.value;
+    const portVLAN = cleanValues['Port VLAN ID'];
     if (portVLAN) extendObj(vlans, portVLAN, {announced: true, role: 'Port'})
 
-    const voiceVLAN = lldp.find(v=>
-      v.name==='Vendor Specific'
-      && v.value.subtypeName === 'Network Policy'
-      && v.value.value['Application Type']==='Voice'
-    )?.value?.value?.['VLAN ID'];
+    const voiceVLAN = cleanValues['Network Policy Voice']?.value?.value?.['VLAN ID'];
     if (voiceVLAN) extendObj(vlans, voiceVLAN, {announced: true, role: 'Voice'})
 
-    lldp.filter(v=>
-      v.name==='Vendor Specific'
-      && v.value.subtypeName === 'VLAN Name'
-    ).forEach(v=>extendObj(vlans, v.value.value.id, {name: v.value.value.name, announced: true}));
+    cleanValues['VLAN Name'].forEach(v=>
+      extendObj(vlans, v.value.value.id, {name: v.value.value.name, announced: true})
+    );
 
     detectedVlans.filter(v=>v.id!==0).forEach(v=>extendObj(vlans, v.id, {detected: true, tagged: true, traffic: v.traffic}));
-    if (detectedVlans[0]?.id===0 && detectedVlans[0]?.traffic?.arp) extendObj(vlans, portVLAN || 0, {detected: true, untagged: true, traffic: detectedVlans[0].traffic});
+    if (detectedVlans[0]?.id===0 && detectedVlans[0]?.traffic?.arp)
+      extendObj(vlans, portVLAN || 0, {detected: true, untagged: true, traffic: detectedVlans[0].traffic});
 
     const detail = lldp.map(tlv=>`${tlv.name}: ${JSON.stringify(tlv.value, null, 2)}`).join('\n');
-
-    console.log('vlans', vlans);
 
     return html`
       ${tile('LLDP', lldpStatus.toUpperCase(), lldpStatus, detail)}
       ${tile('VLAN', vlanStatus.toUpperCase(), vlanStatus, detectedVlans)}
-      ${Object.entries(tiles).map(([title, value])=>value?tile(title, value, 'ok'):'')}
+      ${tiles}
       ${Object.entries(vlans).map(([id, vlan])=>tile(
         (vlan.untagged ? 'Native ' : '') + (vlan.role || '') + ' VLAN',
         vlan.name ? id+'\n'+vlan.name : id,

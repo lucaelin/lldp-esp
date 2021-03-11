@@ -10,7 +10,6 @@ const ethertypeEnc = [
 ];
 
 export function parseVLAN(data) {
-  console.log('vlans', data)
   const vlans = [];
   let offset = 0;
 

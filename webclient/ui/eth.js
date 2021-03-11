@@ -22,7 +22,7 @@ export default {
     const lable = c.value.byteLength ? lables[c.value.getUint8()] || 'Unknown!' : 'Not connected...';
     const okness = oknesses[lable];
 
-    const externalPower = c.value.getUint8(1);
+    const externalPower = c.value.byteLength > 1 && c.value.getUint8(1);
 
     return html`
       <div class="tile ${okness}">

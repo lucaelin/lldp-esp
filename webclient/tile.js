@@ -7,7 +7,8 @@ export default function tile(title, status, okness='unknown', fx=undefined) {
     handler = fx;
   } else if (fx) {
     handler = (e)=>{
-      const element = e.composedPath().find(e=>e.classList.contains('tile'));
+      if (e.composedPath().find(e=>e.classList?.contains('preventParentClick'))) return;
+      const element = e.composedPath().find(e=>e.classList?.contains('tile'));
       fx ? element.classList.toggle('detail') : element.classList.remove('detail');
     }
     if (typeof fx === 'string') {
@@ -21,15 +22,15 @@ export default function tile(title, status, okness='unknown', fx=undefined) {
         }</pre>`;
     }
   }
-  return html`
+  return status?html`
     <div class="tile ${okness}" @click=${handler}>
       <span class="title">${title}</span>
       <span class="value">${status}</span>
       ${typeof detail === 'string' ? html`
-        <pre class="detail">${detail}</pre>
+        <pre class="detail preventParentClick">${detail}</pre>
       ` : html`
-        <div class="detail">${detail}</div>
+        <div class="detail preventParentClick">${detail}</div>
       `}
     </div>
-  `;
+  `:html``;
 }
