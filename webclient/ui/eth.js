@@ -22,10 +22,16 @@ export default {
     const lable = c.value.byteLength ? lables[c.value.getUint8()] || 'Unknown!' : 'Not connected...';
     const okness = oknesses[lable];
 
+    const externalPower = c.value.getUint8(1);
+
     return html`
       <div class="tile ${okness}">
         <span class="title">ETH</span>
         <span class="value">${lable}</span>
+      </div>
+      <div class="tile ${externalPower?'good':'ok'}">
+        <span class="title">Power</span>
+        <span class="value">${externalPower?'External':'Battery'}</span>
       </div>
     `;
   }
