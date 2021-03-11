@@ -9,13 +9,12 @@ async function timeout(promise, delay = 3000, error = new Error('Timeout')) {
 }
 
 export async function connectDevice(serviceUuid) {
-  console.log('Requesting Bluetooth Device...');
+  console.debug('Requesting Bluetooth Device...');
 
   const device = await navigator.bluetooth.requestDevice({
     filters: [{services: [serviceUuid]}]
   });
-  console.log('Got device', device);
-  console.log('Got device', device.gatt);
+  console.debug('Got device', device);
 
   device.addEventListener('gattserverdisconnected', ()=>connectGatt(device, serviceUuid, 2000));
 
@@ -29,16 +28,16 @@ async function connectGatt(device, serviceUuid, delay=0) {
   await new Promise(res=>setTimeout(res, delay));
   delay = 2000;
 
-  console.log('Connecting to GATT Server...');
+  console.debug('Connecting to GATT Server...');
   const server = await timeout(device.gatt.connect(), 3000).catch((e)=>{
     console.error(e);
     return null;
   });
   if (!server) return connectGatt(device, serviceUuid, delay);
   device.dispatchEvent(new Event('gattserverconnected')); // i wish this event existed in the spec...
-  console.log('Got server', server);
+  console.debug('Got server', server);
 
-  console.log('Getting Service...');
+  console.debug('Getting Service...');
   service = await timeout(server.getPrimaryService(serviceUuid), 3000).catch((e)=>{
     console.error(e);
     return null;
@@ -48,13 +47,13 @@ async function connectGatt(device, serviceUuid, delay=0) {
     alert('An error occurred: Timeout getting primary Service');
     return window.location.reload();
   }
-  console.log('Got service', service);
+  console.debug('Got service', service);
 
-  console.log('Setting up characteristics');
+  console.debug('Setting up characteristics');
   for (const c of Object.keys(handles)) {
     await setupWatchCharacteristic(c);
   }
-  console.log('Setting up characteristics complete');
+  console.debug('Setting up characteristics complete');
 }
 
 export async function watchCharacteristic(uuid, cb) {
@@ -68,9 +67,9 @@ export async function watchCharacteristic(uuid, cb) {
 async function setupWatchCharacteristic(uuid) {
   const createdService = service;
   if (uuid.startsWith('0x')) uuid = parseInt(uuid);
-  console.log('Getting Characteristic ', uuid);
+  console.debug('Getting Characteristic ', uuid);
   const char = await service.getCharacteristic(uuid);
-  console.log('Got Characteristic ', char);
+  console.debug('Got Characteristic ', char);
 
   let fallbackInterval;
 
@@ -78,11 +77,11 @@ async function setupWatchCharacteristic(uuid) {
     if (service !== createdService && fallbackInterval) return window.clearInterval(fallbackInterval);
     const isNotify = e && e.type==='characteristicvaluechanged' ? true : false;
     const isNotifyFullValue = isNotify && e.target.value.byteLength !== 20 ? true : false; // see WebBluetoothCG/web-bluetooth/issues/274
-    console.log('Handling value change', uuid, 'isNotify:', isNotify);
-    //return console.log(char);
-    console.log('Reading value on change', uuid, 'isNotifyFullValue:', isNotifyFullValue);
+    console.debug('Handling value change', uuid, 'isNotify:', isNotify);
+    //return console.debug(char);
+    console.debug('Reading value on change', uuid, 'isNotifyFullValue:', isNotifyFullValue);
     const value = isNotifyFullValue ? e.target.value : await char.readValue();
-    console.log('Got new value', uuid);
+    console.debug('Got new value', uuid);
     uuid = typeof uuid === 'number' ? '0x'+uuid.toString(16) : uuid;
     await Promise.all(handles[uuid].map(cb=>{
       try {
@@ -91,7 +90,7 @@ async function setupWatchCharacteristic(uuid) {
         console.error('Error trying to update watch:', e);
       }
     }))
-    console.log('Completed callbacks', uuid);
+    console.debug('Completed callbacks', uuid);
   };
 
   if (char.properties.notify) {
@@ -101,7 +100,7 @@ async function setupWatchCharacteristic(uuid) {
     console.warn('using fallback 3s polling for', uuid);
     fallbackInterval = window.setInterval(handleValueChanged, 3000);
   }
-  console.log(uuid, 'setup complete, getting initial value');
+  console.debug(uuid, 'setup complete, getting initial value');
   await handleValueChanged();
-  console.log(uuid, 'got initial value');
+  console.debug(uuid, 'got initial value');
 }
