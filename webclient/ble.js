@@ -1,5 +1,12 @@
 let service = null;
 const handles = {};
+const values = {};
+function uuid2key(uuid) {
+  return typeof uuid === 'number' ? '0x'+uuid.toString(16) : uuid;
+}
+function key2uuid(key) {
+  return typeof key === 'string' && key.startsWith('0x') ? parseInt(key) : key;
+}
 
 async function timeout(promise, delay = 3000, error = new Error('Timeout')) {
   return Promise.race([
@@ -57,7 +64,7 @@ async function connectGatt(device, serviceUuid, delay=0) {
 }
 
 export async function watchCharacteristic(uuid, cb) {
-  uuid = typeof uuid === 'number' ? '0x'+uuid.toString(16) : uuid;
+  uuid = uuid2key(uuid);
   const isFirstWatch = !handles[uuid];
   if (!handles[uuid]) handles[uuid] = [];
   handles[uuid].push(cb);
@@ -66,9 +73,8 @@ export async function watchCharacteristic(uuid, cb) {
 
 async function setupWatchCharacteristic(uuid) {
   const createdService = service;
-  if (uuid.startsWith('0x')) uuid = parseInt(uuid);
   console.debug('Getting Characteristic ', uuid);
-  const char = await service.getCharacteristic(uuid);
+  const char = await service.getCharacteristic(key2uuid(uuid));
   console.debug('Got Characteristic ', char);
 
   let fallbackInterval;
@@ -82,8 +88,7 @@ async function setupWatchCharacteristic(uuid) {
     console.debug('Reading value on change', uuid, 'isNotifyFullValue:', isNotifyFullValue);
     const value = isNotifyFullValue ? e.target.value : await char.readValue();
     console.debug('Got new value', uuid);
-    uuid = typeof uuid === 'number' ? '0x'+uuid.toString(16) : uuid;
-    await Promise.all(handles[uuid].map(cb=>{
+    await Promise.all(handles[uuid2key(uuid)].map(cb=>{
       try {
         return cb(value, isNotify);
       } catch(e) {
