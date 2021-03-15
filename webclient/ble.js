@@ -1,6 +1,8 @@
+let automaticReconnect = true;
+let device = null;
 let service = null;
 const handles = {};
-const values = {};
+
 function uuid2key(uuid) {
   return typeof uuid === 'number' ? '0x'+uuid.toString(16) : uuid;
 }
@@ -16,18 +18,51 @@ async function timeout(promise, delay = 3000, error = new Error('Timeout')) {
 }
 
 export async function connectDevice(serviceUuid) {
+  if (service) throw new Error('BLE Already connected');
   console.debug('Requesting Bluetooth Device...');
 
-  const device = await navigator.bluetooth.requestDevice({
+  automaticReconnect = true;
+
+  device = device ? device : await navigator.bluetooth.requestDevice({
     filters: [{services: [serviceUuid]}]
   });
   console.debug('Got device', device);
 
-  device.addEventListener('gattserverdisconnected', ()=>connectGatt(device, serviceUuid, 2000));
+  device.addEventListener('gattserverdisconnected', ()=>automaticReconnect&&connectGatt(device, serviceUuid, 2000));
 
   await connectGatt(device, serviceUuid);
 
   return device;
+}
+export async function disconnect(forget = false) {
+  console.debug('Disconnecting...');
+  automaticReconnect = false;
+  if (service) await service.device.gatt.disconnect();
+  service = null;
+  if (forget) device = null;
+  console.debug('Disconnected');
+}
+
+export async function createSnapshot() {
+  if (!service) throw new Error('BLE Service not connected');
+  const ret = {};
+  for (const c of Object.keys(handles)) {
+    console.debug('snapping', c);
+    const char = await service.getCharacteristic(key2uuid(c));
+    console.debug('got', char, 'for snapping');
+    const value = await char.readValue();
+    console.debug('got value for', c);
+    ret[c] = Array.from(new Uint8Array(value.buffer));
+  }
+  return ret;
+}
+
+export async function setSnapshot(snap = {}) {
+  await disconnect();
+  await Promise.all(Object.entries(handles).flatMap(([c, cbs])=>{
+    const v = new DataView(new Uint8Array(snap[c] || []).buffer);
+    return cbs.map(cb=>cb(v, false));
+  }));
 }
 
 async function connectGatt(device, serviceUuid, delay=0) {
@@ -82,12 +117,13 @@ async function setupWatchCharacteristic(uuid) {
   const handleValueChanged = async (e) => {
     if (service !== createdService && fallbackInterval) return window.clearInterval(fallbackInterval);
     const isNotify = e && e.type==='characteristicvaluechanged' ? true : false;
-    const isNotifyFullValue = isNotify && e.target.value.byteLength !== 20 ? true : false; // see WebBluetoothCG/web-bluetooth/issues/274
-    console.debug('Handling value change', uuid, 'isNotify:', isNotify);
+    // see WebBluetoothCG/web-bluetooth/issues/274 ... TODO this might cause looping if value read returns exactly 20 bytes
+    const isNotifyFullValue = isNotify && e.target.value.byteLength !== 20 ? true : false;
+    //console.debug('Handling value change', uuid, 'isNotify:', isNotify);
     //return console.debug(char);
-    console.debug('Reading value on change', uuid, 'isNotifyFullValue:', isNotifyFullValue);
+    //console.debug('Reading value on change', uuid, 'isNotifyFullValue:', isNotifyFullValue);
     const value = isNotifyFullValue ? e.target.value : await char.readValue();
-    console.debug('Got new value', uuid);
+    //console.debug('Got new value', uuid);
     await Promise.all(handles[uuid2key(uuid)].map(cb=>{
       try {
         return cb(value, isNotify);
@@ -95,7 +131,7 @@ async function setupWatchCharacteristic(uuid) {
         console.error('Error trying to update watch:', e);
       }
     }))
-    console.debug('Completed callbacks', uuid);
+    //console.debug('Completed callbacks', uuid);
   };
 
   if (char.properties.notify) {

@@ -28,15 +28,24 @@ main > div .tile {
   flex-grow: 1;
 }
 
+.flex {
+  display: flex;
+  flex-direction: column;
+}
+.flex-row {
+  flex-direction: row;
+}
+.flex-gap {
+  gap: 1rem;
+}
+
 .tile {
   --size: 100px;
   --color: #91b2bd;
   --title-height: calc(0.2 * var(--size));
   --offset-top: calc(0.5 * var(--title-height));
   min-width: var(--size);
-  width: auto;
-  padding-left: var(--offset-top);
-  padding-right: var(--offset-top);
+  width: min-content;
   height: var(--size);
   margin: var(--offset-top);
   -padding-top: var(--offset-top);
@@ -66,21 +75,62 @@ main > div .tile {
 }
 .tile .value {
   display: inline-block;
+  padding: var(--offset-top);
   vertical-align: middle;
   line-height: 90%;
   font-size: calc(0.3 * var(--size));
   white-space: pre-wrap;
 }
+.tile > .swipe {
+  overflow-x: auto;
+  display: flex;
+  flex-direction: row;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+}
+.tile > .swipe::-webkit-scrollbar {
+  display: none;  /* Safari and Chrome */
+}
+
+.tile > .swipe::before {
+  position: absolute;
+  left: 0;
+  color: var(--color);
+  content: '<';
+  padding: 0 1rem;
+  opacity: 0.7;
+  text-shadow: 0 0 0px var(--color);
+}
+.tile > .swipe::after {
+  position: absolute;
+  right: 0;
+  color: var(--color);
+  content: '>';
+  padding: 0 1rem;
+  opacity: 0.7;
+  text-shadow: 0 0 0px var(--color);
+}
+.tile > .swipe > * {
+  min-width: 100%;
+  scroll-snap-align: center;
+  scroll-snap-stop: always;
+}
 .tile .detail {
   display: none;
-  margin-bottom: 1rem;
+  padding: 1rem;
+  border-image: linear-gradient(to right,
+    transparent, var(--color), var(--color), var(--color), transparent
+  ) 10;
+  border-width: 1px;
+  border-top-style: solid;
 }
-.tile.detail {
+.tile.expand {
   width: 100%;
   height: auto;
 }
-.tile.detail .detail {
-  display: block;
+.tile.expand .detail {
+  display: flex;
   line-height: normal;
   text-align: left;
   overflow: auto;
@@ -92,9 +142,31 @@ main > div .tile {
 .ok {
   --color: #55CCFF;
 }
+.warn {
+  --color: #ffc147;
+}
 .bad {
   --color: #ff3a57;
 }
 .unknown {
   --color: #91b2bd;
+}
+.dark {
+  background-color: #000;
+  color: white;
+  border: 1px solid transparent;
+  font-size: 120%;
+  padding: 0.5rem;
+
+  border-image: linear-gradient(to right,
+   transparent, var(--color), transparent
+  ) 10;
+  border-width: 1px;
+  border-top-style: solid;
+}
+textarea.wide {
+  width: 100%;
+  resize: vertical;
+  height: auto;
+  min-height: 5rem;
 }
