@@ -5,6 +5,10 @@ Its purpose is to passively listen on ethernet traffic and extract information a
 
 If the connected equipment is sending **LLDP** messages, those are parsed and displayed, too.
 
+*Disclaimer*: This Software is currently considered **alpha**. This means that:
+- The WebApp is only compatible with an up2date device firmware. If you experience issues, please check if you have the latest firmware installed.
+- The WebApp device-history feature might contain incompatible snapshots. There is no guarantee older snapshots remain working in a later software release.
+
 ## Hardware
 I designed this software to run on the [Olimex **ESP32**-POE-ISO](https://www.olimex.com/Products/IoT/ESP32/ESP32-POE-ISO/). This SoC includes an ESP32-WROOM-32, a 100Mbit/s Ethernet interface and can be powered using PoE, USB or an external battery.
 

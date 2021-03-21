@@ -11,9 +11,9 @@ import lldpUi from './ui/lldp.js';
 
 const bleStatus = {
   unavailable: ['unavailable', 'bad', html`
-    <pre>Web Bluetooth is unavailable on your system or browser.
-    Apple decided against implementing this API - Mozilla followed.
-    Google Chrome, Edge (Chromium) and Opera should work fine, if the device has BLE capabilities.</pre>
+<p>Web Bluetooth is unavailable on your system or browser.
+Apple decided against implementing this API - Mozilla followed.
+Google Chrome, Edge (Chromium) and Opera should work fine, if the device has BLE capabilities.</p>
   `],
   failed: ['FAILED!', 'bad'],
   not_connected: ['connect', 'ok', connect],
@@ -47,16 +47,12 @@ async function saveSnapshot(e) {
   }
   const snap = await createSnapshot();
   const time = new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString();
-  localStorage.setItem(time, JSON.stringify({time, description, snap}));
+  localStorage.setItem(`ble_${bleService}_${Date.now()}`, JSON.stringify({time, description, snap}));
   setBleStatus(bleStatus.connected);
 }
 async function saveSnapshotDescription(snapshotName, description) {
   const snapshot = JSON.parse(historyValues.getItem(snapshotName));
   localStorage.setItem(snapshotName, JSON.stringify({...snapshot, description}));
-}
-async function loadSnapshotDescription(snapshotName) {
-  const snapshot = JSON.parse(historyValues.getItem(snapshotName));
-  return snapshot.description;
 }
 async function removeSnapshot(v, status, snapshotName) {
   localStorage.removeItem(v);
@@ -67,6 +63,12 @@ async function loadSnapshot(v) {
   const snapshot = historyValues.getItem(v);
   if (snapshot) setSnapshot(JSON.parse(snapshot).snap);
   setBleStatus(bleStatus.history, v);
+}
+function listSnapshots() {
+  return Object.keys(historyValues)
+    .filter(k=>k.startsWith(`ble_${bleService}_`))
+    .map(k=>[k, JSON.parse(historyValues.getItem(k))])
+    .sort((a,b)=>b[0].localeCompare(a[0]));
 }
 
 function setBleStatus(status, snapshotName) {
@@ -79,21 +81,21 @@ function setBleStatus(status, snapshotName) {
     setSnapshot();
   }
 
-  const historySelect = Object.entries(historyValues).sort((a,b)=>b[0].localeCompare(a[0])).map((v)=>[
-    v[0], html`
+  const historySelect = listSnapshots().map((v)=>[
+    v[1].time, html`
       <button class="dark warn" @click=${()=>removeSnapshot(v[0])}>❌ delete</button>
       <div> <!-- this div somehow prevents autofocus on the textarea if the parent is display: flex -->
         <textarea class="dark wide"
           placeholder="Add description"
           rows="6"
           @keyup=${(e)=>saveSnapshotDescription(v[0], e.target.value, e)}
-          .value=${until(loadSnapshotDescription(v[0]), 'loading...')}
+          .value=${v[1].description || ''}
         ></textarea>
       </div>
     `, ()=>loadSnapshot(v[0])
   ]);
   const historyDashboard = [
-    historyValues.length + ' Entries',
+    historySelect.length + ' Entries',
     connected ? html`
       <form class="flex flex-gap" @submit=${(e)=>saveSnapshot(e)}>
         <button class="dark good">➕ create new</button>
@@ -131,6 +133,7 @@ async function connect() {
 }
 
 const helptext = html`
+<div>
   <h2>Where am I?</h2>
   <p>The esp-lldp tool is a webapp that works in combination with an ESP32 with onboard ethernet and is useful for debugging or configuring network equipment.<br />
   Its purpose is to passively listen on ethernet traffic and extract information about the switch it is connected to.<br />
@@ -144,6 +147,8 @@ const helptext = html`
     <li>LLDP status and information</li>
     <li>Detected VLANs</li>
   </ul></p>
+  <p>Now that you are connected, you can also create entries in the apps history. Tap the "History"-Tile, then "create" to take a snapshot of the current data. You can now browse your history even without a device at hand.</p>
+</div>
 `;
 
 async function init() {

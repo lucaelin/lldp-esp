@@ -116,6 +116,9 @@ main > div .tile {
   scroll-snap-align: center;
   scroll-snap-stop: always;
 }
+.tile > .swipe .value {
+  padding: var(--offset-top) 2rem;
+}
 .tile .detail {
   display: none;
   padding: 1rem;

@@ -1,3 +1,5 @@
+import {b64encode, b64decode} from './b64.js';
+
 let automaticReconnect = true;
 let device = null;
 let service = null;
@@ -52,7 +54,7 @@ export async function createSnapshot() {
     console.debug('got', char, 'for snapping');
     const value = await char.readValue();
     console.debug('got value for', c);
-    ret[c] = Array.from(new Uint8Array(value.buffer));
+    ret[c] = b64encode(value.buffer);
   }
   return ret;
 }
@@ -60,7 +62,7 @@ export async function createSnapshot() {
 export async function setSnapshot(snap = {}) {
   await disconnect();
   await Promise.all(Object.entries(handles).flatMap(([c, cbs])=>{
-    const v = new DataView(new Uint8Array(snap[c] || []).buffer);
+    const v = new DataView(b64decode(snap[c]));
     return cbs.map(cb=>cb(v, false));
   }));
 }
