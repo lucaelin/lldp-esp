@@ -28,4 +28,12 @@ menu "Display Configuration"
         int "EPD: Rotation"
         range 0 3
         default 0
+    config EINK_INVERT_COLOR
+        int "EPD: Invert Colors"
+        range 0 1
+        default 0
+    config EINK_INVERT_X
+        int "EPD: Invert X-Axis"
+        range 0 1
+        default 0
 endmenu

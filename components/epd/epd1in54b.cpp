@@ -28,10 +28,10 @@
 #include "epd1in54b.h"
 #include "sdkconfig.h"
 
-Epd::~Epd() {
+Epd1in54b::~Epd() {
 };
 
-Epd::Epd() {
+Epd1in54b::Epd() {
     reset_pin = (gpio_num_t)CONFIG_EINK_RST;
     dc_pin = (gpio_num_t)CONFIG_EINK_DC;
     cs_pin = (gpio_num_t)CONFIG_EINK_SPI_CS;
@@ -40,7 +40,7 @@ Epd::Epd() {
     height = EPD_HEIGHT;
 };
 
-int Epd::Init(void) {
+int Epd1in54b::Init(void) {
     /* this calls the peripheral hardware interface, see epdif */
     if (IfInit() != 0) {
         return -1;
@@ -91,7 +91,7 @@ int Epd::Init(void) {
 /**
  *  @brief: basic function for sending commands
  */
-void Epd::SendCommand(unsigned char command) {
+void Epd1in54b::SendCommand(unsigned char command) {
     DigitalWrite(dc_pin, 0);
     SpiTransfer(command);
 }
@@ -99,7 +99,7 @@ void Epd::SendCommand(unsigned char command) {
 /**
  *  @brief: basic function for sending data
  */
-void Epd::SendData(unsigned char data) {
+void Epd1in54b::SendData(unsigned char data) {
     DigitalWrite(dc_pin, 1);
     SpiTransfer(data);
 }
@@ -107,7 +107,7 @@ void Epd::SendData(unsigned char data) {
 /**
  *  @brief: Wait until the busy_pin goes HIGH
  */
-void Epd::WaitUntilIdle(void) {
+void Epd1in54b::WaitUntilIdle(void) {
     while(DigitalRead(busy_pin) == 0) {      //0: busy, 1: idle
         //DelayMs(100);
     }
@@ -116,9 +116,9 @@ void Epd::WaitUntilIdle(void) {
 /**
  *  @brief: module reset.
  *          often used to awaken the module in deep sleep,
- *          see EPD::Sleep();
+ *          see Epd1in54b::Sleep();
  */
-void Epd::Reset(void) {
+void Epd1in54b::Reset(void) {
     DigitalWrite(reset_pin, 1);
     DelayMs(200);
     DigitalWrite(reset_pin, 0);                //module reset
@@ -127,7 +127,7 @@ void Epd::Reset(void) {
     DelayMs(200);
 }
 
-void Epd::DisplayFrame(const unsigned char* frame_buffer_black, const unsigned char* frame_buffer_red) {
+void Epd1in54b::DisplayFrame(const unsigned char* frame_buffer_black, const unsigned char* frame_buffer_red) {
     unsigned int i;
 
     SendCommand(0x24);
@@ -147,7 +147,7 @@ void Epd::DisplayFrame(const unsigned char* frame_buffer_black, const unsigned c
     WaitUntilIdle();
 }
 
-void Epd::DisplayClear() {
+void Epd1in54b::DisplayClear() {
     unsigned int i;
 
     SendCommand(0x24);
@@ -172,9 +172,9 @@ void Epd::DisplayClear() {
  *          The deep sleep mode would return to standby by hardware reset.
  *          The only one parameter is a check code, the command would be
  *          executed if check code = 0xA5.
- *          You can use Epd::Init() to awaken
+ *          You can use Epd1in54b::Init() to awaken
  */
-void Epd::Sleep() {
+void Epd1in54b::Sleep() {
     SendCommand(0x10);         //power setting
     SendData(0x01);        //gate switch to external
     DelayMs(100);

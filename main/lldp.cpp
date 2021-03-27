@@ -17,35 +17,35 @@ void lldp_tlv_handler(const lldp_tlv *tlv) {
         case 0x01:
             switch (tlv->data[0]) {
                 case 0x04:
-                    epd_setLine(1, "Chassis ID", "%02X:%02X:%02X:%02X:%02X:%02X",
+                    epd_setLine(epd_line_switchname, "Chassis ID", "%02X:%02X:%02X:%02X:%02X:%02X",
                                 tlv->data[1], tlv->data[2], tlv->data[3], tlv->data[4], tlv->data[5], tlv->data[6]);
                 break;
                 default:
-                    epd_setLine(1, "Chassis ID", 10, (char*)tlv->data + 1, tlv->len - 1);
+                    epd_setLine(epd_line_switchname, "Chassis ID", 10, (char*)tlv->data + 1, tlv->len - 1);
                 break;
             }
         break;
         case 0x02:
             switch (tlv->data[0]) {
                 case 0x03:
-                    epd_setLine(2, "Port ID", "%02X:%02X:%02X:%02X:%02X:%02X",
+                    epd_setLine(epd_line_switchport, "Port ID", "%02X:%02X:%02X:%02X:%02X:%02X",
                                 tlv->data[1], tlv->data[2], tlv->data[3], tlv->data[4], tlv->data[5], tlv->data[6]);
                 break;
                 default:
-                    epd_setLine(2, "Port ID", 7, (char*)tlv->data + 1, tlv->len - 1);
+                    epd_setLine(epd_line_switchport, "Port ID", 7, (char*)tlv->data + 1, tlv->len - 1);
                 break;
             }
         break;
         case 0x04:
-            epd_setLine(2, "Port description", 16, (char*)tlv->data, tlv->len);
+            epd_setLine(epd_line_switchport, "Port description", 16, (char*)tlv->data, tlv->len);
         break;
         case 0x05:
-            epd_setLine(1, "System name", 11, (char*)tlv->data, tlv->len);
+            epd_setLine(epd_line_switchname, "System name", 11, (char*)tlv->data, tlv->len);
         break;
         case 0x7f: // Vendor specific
             switch ((tlv->data[0] << 24) + (tlv->data[1] << 16) + (tlv->data[2] << 8) + tlv->data[3]) {
                 case 0x0080c201:
-                    epd_setLine(3, "Port VLAN", "%u", (tlv->data[4] << 8) + tlv->data[5]);
+                    epd_setLine(epd_line_vlan, "Port VLAN", "%u", (tlv->data[4] << 8) + tlv->data[5]);
                 break;
             }
         break;
@@ -89,7 +89,7 @@ void ethertype_lldp_reset() {
     uint8_t value[] = {0x00};
     last_lldp_frame.length = 0;
     gatts_webble_set_and_notify_value(IDX_CHAR_VAL_LLDP, sizeof(value), value);
-    epd_clearLine(1);
-    epd_clearLine(2);
-    epd_clearLine(3);
+    epd_clearLine(epd_line_switchname);
+    epd_clearLine(epd_line_switchport);
+    epd_clearLine(epd_line_vlan);
 }

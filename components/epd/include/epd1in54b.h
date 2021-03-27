@@ -69,7 +69,9 @@
 #define ACTIVE_PROGRAM                              0xA1
 #define READ_OTP_DATA                               0xA2
 
-class Epd : EpdIf {
+#define Epd     Epd1in54b
+
+class Epd1in54b : EpdIf {
 public:
     int width;
     int height;

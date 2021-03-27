@@ -25,7 +25,7 @@
  */
 #include "epd.h"
 
-#include "epd1in54b.h"
+#include "epd2in66.h"
 #include "epdpaint.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
@@ -51,22 +51,44 @@ unsigned char* frame_red = (unsigned char*)malloc(epd.width * epd.height / 8);
 Paint paint_black(frame_black, epd.width, epd.height);
 Paint paint_red(frame_red, epd.width, epd.height);
 
-
-const uint8_t num_of_keyvals = 6;
 const uint8_t len_of_keyval = 20;
-const uint32_t keyval_buffer = num_of_keyvals * len_of_keyval;
+const uint32_t keyval_buffer = epd_num_lines * len_of_keyval;
 
 char old_keys[keyval_buffer] = {};
 char old_values[keyval_buffer] = {};
+uint8_t old_icons[epd_num_icons] = {};
 char keys[keyval_buffer] = {};
 char values[keyval_buffer] = {};
+uint8_t icons[epd_num_icons] = {};
 
 bool bufferChanged() {
     for (uint32_t i = 0; i < keyval_buffer; i++) {
         if (old_keys[i] != keys[i]) return true;
         if (old_values[i] != values[i]) return true;
     }
+    for (uint8_t i = 0; i < epd_num_icons; i++) {
+        if (old_icons[i] != icons[i]) return true;
+    }
     return false;
+}
+
+const uint64_t* epd_getIcon(epd_icon icon, uint8_t value) {
+    switch(icon) {
+        case epd_icon_ble:      return icon_ble;
+        case epd_icon_ethernet: return icon_ethernet;
+        case epd_icon_power:    return icon_power;
+        case epd_icon_battery:  switch(value) {
+            case 04: return icon_battery4;
+            case 03: return icon_battery3;
+            case 02: return icon_battery2;
+            case 01: return icon_battery1;
+            case 00: return icon_battery0;
+            default: return icon_none;
+        }
+
+        case epd_num_icons:     return icon_none;
+    }
+    return icon_none;
 }
 
 void epd_update() {
@@ -88,41 +110,51 @@ void epd_update() {
         return;
     }
 
+    schedule_update = true;
     last_update = time;
 
-    // epapers are slow, so lets wait another 100ms because update requests might come in packs
-    vTaskDelay(100 / portTICK_PERIOD_MS);
+    ESP_LOGI(TAG, "Draw sleeping a little");
+    // epapers are slow, so lets wait another two second because update requests might come in packs
+    vTaskDelay(2000 / portTICK_PERIOD_MS);
+    ESP_LOGI(TAG, "Draw actually starting now");
 
     schedule_update = false;
 
 
     memcpy(old_keys, keys, keyval_buffer);
     memcpy(old_values, values, keyval_buffer);
+    memcpy(old_icons, icons, epd_num_icons);
 
     paint_black.Clear(UNCOLORED);
     paint_red.Clear(UNCOLORED);
 
-    paint_black.DrawImageAt(140, 140, epd_logo, 58, 58);
+    paint_black.DrawImageAt(epd.width - 58, epd.height - 58, icon_logo, 58, 58);
+
+    for (uint8_t icon = 0; icon < epd_num_icons; icon++) {
+        if (old_icons[icon]) {
+            paint_black.DrawImageAt( icon * 30, epd.height - 32, epd_getIcon((epd_icon) icon, old_icons[icon]), 32, 32);
+        }
+    }
 
     uint8_t blockheight = Font12.Height + Font16.Height;
 
-    for (uint8_t line = 0; line < num_of_keyvals; line++) {
+    for (uint8_t line = 0; line < epd_num_lines; line++) {
         uint32_t idx = line * len_of_keyval;
 
-        paint_black.DrawStringBufferAt(4, 8 + blockheight * line, &keys[idx], len_of_keyval, &Font12, COLORED);
-        paint_red.DrawStringBufferAt(8, 8 + Font12.Height + blockheight * line, &values[idx], len_of_keyval, &Font16, COLORED);
+        paint_black.DrawStringBufferAt(4, 8 + blockheight * line, &old_keys[idx], len_of_keyval, &Font12, COLORED);
+        paint_red.DrawStringBufferAt(8, 8 + Font12.Height + blockheight * line, &old_values[idx], len_of_keyval, &Font16, COLORED);
     }
 
-      epd.DisplayFrame(frame_black, frame_red);
-      ESP_LOGI(TAG, "Draw complete");
+    epd.DisplayFrame(frame_black, frame_red);
+    ESP_LOGI(TAG, "Draw complete");
 }
 
 void epd_clearLines() {
-    for (uint8_t line = 0; line < num_of_keyvals; line++) {
-        epd_clearLine(line);
+    for (uint8_t line = 0; line < epd_num_lines; line++) {
+        epd_clearLine((epd_line) line);
     }
 }
-void epd_clearLine(uint8_t line) {
+void epd_clearLine(epd_line line) {
     uint32_t offset = len_of_keyval * line;
     for (uint32_t idx = offset; idx < offset + len_of_keyval; idx++) {
         keys[idx] = ' ';
@@ -130,14 +162,14 @@ void epd_clearLine(uint8_t line) {
     }
 }
 
-void epd_setLine(uint8_t line, const char *key, uint32_t keyLength, const char *value, uint32_t valLength) {
+void epd_setLine(epd_line line, const char *key, uint32_t keyLength, const char *value, uint32_t valLength) {
     uint32_t offset = len_of_keyval * line;
     epd_clearLine(line);
     memcpy(keys + offset, key, std::min((uint8_t) keyLength, len_of_keyval));
     memcpy(values + offset, value, std::min((uint8_t) valLength, len_of_keyval));
 }
 
-void epd_setLine(uint8_t line, const char *key, const char *value, ...) {
+void epd_setLine(epd_line line, const char *key, const char *value, ...) {
     uint32_t offset = len_of_keyval * line;
     epd_clearLine(line);
 
@@ -153,6 +185,9 @@ void epd_setLine(uint8_t line, const char *key, const char *value, ...) {
     va_end(args);
 }
 
+void epd_setIcon(epd_icon icon, uint8_t show) {
+    icons[icon] = show;
+}
 
 void epd_init() {
   if (epd.Init() != 0) {

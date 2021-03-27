@@ -14,6 +14,8 @@
 #include "esp_event.h"
 #include "esp_log.h"
 #include "driver/gpio.h"
+#include <driver/adc.h>
+#include <esp_adc_cal.h>
 #include "sdkconfig.h"
 
 #include "ethernet.h"
@@ -25,16 +27,34 @@
 static const char *TAG = "eth_ble";
 
 #define CONFIG_POWER_EXTERNAL_POWER_PIN 39
-uint8_t eth_gatts_value[2] = {0x00, 0x00};
+#define CONFIG_POWER_BATTERY_LEVEL_CHANNEL ADC1_CHANNEL_7
+uint8_t eth_gatts_value[3] = {0x00, 0x00, 0x00};
+
+#define BATT_V_MAX      2088.0
+#define BATT_V_RANGE     636.0
+#define BATT_V_MIN      1452.0
 
 static bool power_event_handler() {
+
+    adc1_config_width(ADC_WIDTH_BIT_12);
+    adc1_config_channel_atten(CONFIG_POWER_BATTERY_LEVEL_CHANNEL, ADC_ATTEN_DB_11);
+
+    int val = adc1_get_raw(CONFIG_POWER_BATTERY_LEVEL_CHANNEL);
+    val += adc1_get_raw(CONFIG_POWER_BATTERY_LEVEL_CHANNEL);
+    val += adc1_get_raw(CONFIG_POWER_BATTERY_LEVEL_CHANNEL);
+    val += adc1_get_raw(CONFIG_POWER_BATTERY_LEVEL_CHANNEL);
+    val /= 4;
+    float lvl = ((float)val - BATT_V_MIN) / BATT_V_RANGE;
+    ESP_LOGI(TAG, "Battery Level: %d %f", val, lvl);
+    epd_setIcon(epd_icon_battery, (uint8_t)(lvl / 0.25));
+    eth_gatts_value[2] = (uint8_t)(lvl * 100.0);
+
     uint8_t power = gpio_get_level((gpio_num_t) CONFIG_POWER_EXTERNAL_POWER_PIN);
     //gatts_webble_set_and_notify_value(IDX_CHAR_VAL_ETH, sizeof(eth_gatts_value), eth_gatts_value);
-    if (power == eth_gatts_value[1]) return false;
+    //if (power == eth_gatts_value[1]) return false;
 
     eth_gatts_value[1] = power;
-    if (power) epd_setLine(5, "Power", "External");
-    else epd_setLine(5, "Power", "Internal");
+    epd_setIcon(epd_icon_power, power);
     gatts_webble_set_and_notify_value(IDX_CHAR_VAL_ETH, sizeof(eth_gatts_value), eth_gatts_value);
     epd_update();
 
@@ -55,24 +75,25 @@ static void eth_event_handler(void *arg, esp_event_base_t event_base,
         esp_eth_ioctl(eth_handle, ETH_CMD_S_PROMISCUOUS, (void *)true);
         ethertype_lldp_reset();
         ethertype_vlan_reset();
-        epd_setLine(0, "Ethernet", "Link Up");
+        eth_gatts_value[0] = 0x04;
+        epd_setIcon(epd_icon_ethernet, true);
         ESP_LOGI(TAG, "Ethernet Link Up");
         ESP_LOGI(TAG, "Ethernet HW Addr %02x:%02x:%02x:%02x:%02x:%02x",
                  mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
     break;
     case ETHERNET_EVENT_DISCONNECTED:
         ESP_LOGI(TAG, "Ethernet Link Down");
-        epd_setLine(0, "Ethernet", "Link Down");
+        epd_setIcon(epd_icon_ethernet, false);
         eth_gatts_value[0] = 0x03;
     break;
     case ETHERNET_EVENT_START:
         ESP_LOGI(TAG, "Ethernet Started");
-        epd_setLine(0, "Ethernet", "Started");
+        epd_setIcon(epd_icon_ethernet, false);
         eth_gatts_value[0] = 0x02;
     break;
     case ETHERNET_EVENT_STOP:
         ESP_LOGI(TAG, "Ethernet Stopped");
-        epd_setLine(0, "Ethernet", "Stopped");
+        epd_setIcon(epd_icon_ethernet, false);
         eth_gatts_value[0] = 0x01;
     break;
     default:
@@ -83,10 +104,8 @@ static void eth_event_handler(void *arg, esp_event_base_t event_base,
     gatts_webble_set_and_notify_value(IDX_CHAR_VAL_ETH, sizeof(eth_gatts_value), eth_gatts_value);
 }
 
-
 static esp_err_t eth_frame_handler(esp_eth_handle_t eth_handle, uint8_t *buffer, uint32_t len, void* priv)
 {
-    power_event_handler();
     assert(len >= sizeof(eth_frame));
     eth_frame frame;
     memcpy(&frame.dst, &(buffer[0]), 6);
@@ -96,6 +115,7 @@ static esp_err_t eth_frame_handler(esp_eth_handle_t eth_handle, uint8_t *buffer,
     frame.length = len - (6 + 6 + 2);
     frame.payload = &(buffer[14]);
 
+    // ethernet I packet
     if (frame.type <= 0x05DC) {
         frame.type = 0;
         frame.payload = &(buffer[12]);
@@ -113,8 +133,8 @@ static esp_err_t eth_frame_handler(esp_eth_handle_t eth_handle, uint8_t *buffer,
       ethertype_vlan_handler(&frame);
     }
 
-    //ESP_LOGI(TAG, "Got type %x", frame.type);
-    //ESP_LOGI(TAG, "Payload recv length %u", payload_len);
+    ESP_LOGI(TAG, "core %d Got type %x", xPortGetCoreID(), frame.type);
+    ESP_LOGI(TAG, "Payload recv length %u", frame.length);
     switch (frame.type) {
         case ETHERTYPE_LLDP:
             ethertype_lldp_handler(&frame);
@@ -195,4 +215,12 @@ extern "C" void app_main(void)
     ESP_ERROR_CHECK(esp_eth_driver_install(&config, &eth_handle));
     /* start Ethernet driver state machine */
     ESP_ERROR_CHECK(esp_eth_start(eth_handle));
+
+    uint32_t schedules = 0;
+    while (true) {
+        if (!(schedules % 10)) power_event_handler(); // every ~10 seconds
+
+        vTaskDelay( pdMS_TO_TICKS( 1000 ) );
+        schedules++;
+    }
 }

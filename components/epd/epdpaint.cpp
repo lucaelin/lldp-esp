@@ -59,7 +59,8 @@ void Paint::DrawAbsolutePixel(int x, int y, int colored) {
     if (x < 0 || x >= this->width || y < 0 || y >= this->height) {
         return;
     }
-    if (IF_INVERT_COLOR) {
+    if (CONFIG_EINK_INVERT_X) x = this->width - x;
+    if (CONFIG_EINK_INVERT_COLOR) {
         if (colored) {
             image[(x + y * this->width) / 8] |= 0x80 >> (x % 8);
         } else {
@@ -150,7 +151,7 @@ void Paint::DrawImageAt(int x, int y, const uint64_t* data, uint8_t width, uint8
     for (j = 0; j < height; j++) {
         val1 = data[j];
         val2 = (uint32_t)(data[j] >> 32);
-        for (i = 0; i < width; i++) {
+        for (i = 1; i <= width; i++) {
             bit = width - i;
             if (bit < 32) {
                 DrawPixel(x + i, y + j, GetBit(val1, bit));
