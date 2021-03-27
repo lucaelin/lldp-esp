@@ -1,6 +1,12 @@
 import {html} from 'https://unpkg.com/lit-html?module';
 import {classMap} from 'https://unpkg.com/lit-html/directives/class-map.js?module';
 
+export function createTileContainer(name) {
+  const dom = document.createElement('div');
+  document.querySelector('main').appendChild(dom);
+  return dom;
+}
+
 function renderDetail(detail) {
   if (detail === undefined) return html``;
   if (typeof detail === 'function') return html``;
@@ -28,7 +34,8 @@ export default function tile(title, status, okness='unknown', fx=undefined) {
       if (e.target.classList?.contains('swipe')) {
         const rect = e.target.getBoundingClientRect();
         const dist = (e.clientX - rect.left) / e.target.clientWidth;
-        e.target.scrollBy(Math.round(dist * 2) - 1, 0);
+        const direction = dist > 0.5 ? 1 : -1;
+        e.target.scrollBy(direction * e.target.clientWidth, 0);
         return;
       }
       if (e.composedPath().find(e=>e.classList?.contains('detail'))) return;

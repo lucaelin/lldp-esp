@@ -1,5 +1,5 @@
 import {html} from 'https://unpkg.com/lit-html?module';
-import tile from '../tile.js';
+import tile from './tile.js';
 import {parseLLDP} from '../lldp.js';
 import {parseVLAN} from '../vlan.js';
 

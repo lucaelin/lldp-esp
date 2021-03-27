@@ -19,6 +19,9 @@ async function timeout(promise, delay = 3000, error = new Error('Timeout')) {
   ]);
 }
 
+export function canReconnect() {
+  return !!device;
+}
 export async function connectDevice(serviceUuid) {
   if (service) throw new Error('BLE Already connected');
   console.debug('Requesting Bluetooth Device...');

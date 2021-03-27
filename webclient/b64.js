@@ -17,3 +17,16 @@ export function b64decode(b64string) {
     }
     return bytes.buffer;
 }
+
+
+export function b64encodeString(string) {
+    const encoder = new TextEncoder();
+    const buffer = encoder.encode(string);
+    return b64encode(buffer);
+}
+
+export function b64decodeString(b64string) {
+    const decoder = new TextDecoder('utf-8');
+    const string = b64decode(b64string);
+    return decoder.decode(string);
+}

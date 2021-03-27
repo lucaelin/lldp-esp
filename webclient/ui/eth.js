@@ -1,5 +1,5 @@
 import {html} from 'https://unpkg.com/lit-html?module';
-import tile from '../tile.js';
+import tile from './tile.js';
 
 const lables = {
   0x00: '?',
@@ -23,6 +23,7 @@ export default {
     const okness = oknesses[lable];
 
     const externalPower = c.value.byteLength > 1 && c.value.getUint8(1);
+    const batteryLevel = c.value.byteLength > 2 && c.value.getUint8(2);
 
     return html`
       <div class="tile ${okness}">
@@ -33,6 +34,7 @@ export default {
         <span class="title">Power</span>
         <span class="value">${externalPower?'External':'Battery'}</span>
       </div>
+      ${tile('Battery', batteryLevel && (batteryLevel+'%'), batteryLevel>50?'good':batteryLevel>25?'ok':'bad')}
     `;
   }
 }
