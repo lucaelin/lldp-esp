@@ -30,6 +30,10 @@ typedef enum
     IDX_CHAR_VAL_VLAN,
     IDX_CHAR_CFG_VLAN,
 
+    IDX_CHAR_STP,
+    IDX_CHAR_VAL_STP,
+    IDX_CHAR_CFG_STP,
+
     IDX_NB,
 } gatts_webble_idx;
 

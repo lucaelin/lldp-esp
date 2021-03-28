@@ -151,6 +151,7 @@ static const uint16_t GATTS_SERVICE_UUID_TEST      = 0x00FF;
 static const uint16_t GATTS_CHAR_UUID_TEST_A       = 0xFF01;
 static const uint16_t GATTS_CHAR_UUID_TEST_B       = 0xFF02;
 static const uint16_t GATTS_CHAR_UUID_TEST_C       = 0xFF03;
+static const uint16_t GATTS_CHAR_UUID_TEST_D       = 0xFF04;
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-const-variable"
@@ -220,6 +221,21 @@ static const esp_gatts_attr_db_t gatt_db[IDX_NB] =
     {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_client_config_uuid, ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE,
       sizeof(uint16_t), sizeof(gatts_webble_ccc), (uint8_t *)gatts_webble_ccc}},
 
+    /* Characteristic Declaration */
+    [IDX_CHAR_STP]      =
+    {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid, ESP_GATT_PERM_READ,
+        CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_read_notify}},
+
+    /* Characteristic Value */
+    [IDX_CHAR_VAL_STP]  =
+    {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&GATTS_CHAR_UUID_TEST_D, ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE,
+        GATTS_WEBBLE_CHAR_VAL_LEN_MAX, sizeof(init_value), (uint8_t *)init_value}},
+
+    /* Client Characteristic Configuration Descriptor */
+    [IDX_CHAR_CFG_STP]  =
+    {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_client_config_uuid, ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE,
+        sizeof(uint16_t), sizeof(gatts_webble_ccc), (uint8_t *)gatts_webble_ccc}},
+
 };
 
 esp_err_t gatts_webble_set_value(gatts_webble_idx idx, uint16_t length, uint8_t *value) {
@@ -229,19 +245,19 @@ esp_err_t gatts_webble_get_value(gatts_webble_idx idx, uint16_t *length, const u
   return esp_ble_gatts_get_attr_value(gatts_webble_handle_table[idx], length, value);
 }
 esp_err_t gatts_webble_notify_value(gatts_webble_idx idx, uint16_t length, uint8_t *value) {
-  // esp_ble_gatts_send_indicate(esp_gatt_if_t gatts_if, uint16_t conn_id, uint16_t attr_handle, uint16_t value_len, uint8_t *value, bool need_confirm)
-  return esp_ble_gatts_send_indicate(
-    gatts_webble_profile_tab[PROFILE_APP_IDX].gatts_if,
-    gatts_webble_profile_tab[PROFILE_APP_IDX].conn_id,
-    gatts_webble_handle_table[idx],
-    length,
-    value,
-    false
-  );
+    // esp_ble_gatts_send_indicate(esp_gatt_if_t gatts_if, uint16_t conn_id, uint16_t attr_handle, uint16_t value_len, uint8_t *value, bool need_confirm)
+    return esp_ble_gatts_send_indicate(
+        gatts_webble_profile_tab[PROFILE_APP_IDX].gatts_if,
+        gatts_webble_profile_tab[PROFILE_APP_IDX].conn_id,
+        gatts_webble_handle_table[idx],
+        length,
+        value,
+        false
+    );
 }
 esp_err_t gatts_webble_set_and_notify_value(gatts_webble_idx idx, uint16_t length, uint8_t *value) {
-  gatts_webble_set_value(idx, length, value);
-  return gatts_webble_notify_value(idx, length, value);
+    gatts_webble_set_value(idx, length, value);
+    return gatts_webble_notify_value(idx, length, value);
 }
 
 static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)

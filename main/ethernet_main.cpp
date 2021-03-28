@@ -22,6 +22,7 @@
 #include "gatts_webble.h"
 #include "epd.h"
 #include "lldp.h"
+#include "stp.h"
 #include "vlan.h"
 
 static const char *TAG = "eth_ble";
@@ -30,7 +31,7 @@ static const char *TAG = "eth_ble";
 #define CONFIG_POWER_BATTERY_LEVEL_CHANNEL ADC1_CHANNEL_7
 uint8_t eth_gatts_value[3] = {0x00, 0x00, 0x00};
 
-#define BATT_V_MAX      2088.0
+#define BATT_V_MAX      2270.0
 #define BATT_V_RANGE     636.0
 #define BATT_V_MIN      1452.0
 
@@ -46,7 +47,7 @@ static bool power_event_handler() {
     val /= 4;
     float lvl = ((float)val - BATT_V_MIN) / BATT_V_RANGE;
     ESP_LOGI(TAG, "Battery Level: %d %f", val, lvl);
-    epd_setIcon(epd_icon_battery, (uint8_t)(lvl / 0.25));
+    epd_setIcon(epd_icon_battery, (uint8_t)(lvl / 0.25) + 1);
     eth_gatts_value[2] = (uint8_t)(lvl * 100.0);
 
     uint8_t power = gpio_get_level((gpio_num_t) CONFIG_POWER_EXTERNAL_POWER_PIN);
@@ -75,6 +76,7 @@ static void eth_event_handler(void *arg, esp_event_base_t event_base,
         esp_eth_ioctl(eth_handle, ETH_CMD_S_PROMISCUOUS, (void *)true);
         ethertype_lldp_reset();
         ethertype_vlan_reset();
+        ethertype_stp_reset();
         eth_gatts_value[0] = 0x04;
         epd_setIcon(epd_icon_ethernet, true);
         ESP_LOGI(TAG, "Ethernet Link Up");
@@ -117,9 +119,18 @@ static esp_err_t eth_frame_handler(esp_eth_handle_t eth_handle, uint8_t *buffer,
 
     // ethernet I packet
     if (frame.type <= 0x05DC) {
+        frame.length = frame.type;
         frame.type = 0;
-        frame.payload = &(buffer[12]);
-        frame.length += 2;
+        uint16_t sap = frame.payload[1] + frame.payload[0] * 0x100;
+        switch (sap) {
+            case 0x4242:
+                frame.type = ETHERTYPE_STP;
+                frame.payload = &(frame.payload[3]);
+                frame.length -= 3;
+            break;
+            default:
+            break;
+        }
     }
 
     // strip vlan id from payload
@@ -133,11 +144,14 @@ static esp_err_t eth_frame_handler(esp_eth_handle_t eth_handle, uint8_t *buffer,
       ethertype_vlan_handler(&frame);
     }
 
-    ESP_LOGI(TAG, "core %d Got type %x", xPortGetCoreID(), frame.type);
-    ESP_LOGI(TAG, "Payload recv length %u", frame.length);
+    //ESP_LOGI(TAG, "core %d Got type %x", xPortGetCoreID(), frame.type);
+    //ESP_LOGI(TAG, "Payload recv length %u", frame.length);
     switch (frame.type) {
         case ETHERTYPE_LLDP:
             ethertype_lldp_handler(&frame);
+        break;
+        case ETHERTYPE_STP:
+            ethertype_stp_handler(&frame);
         break;
         default:
         break;
