@@ -53,7 +53,10 @@ export async function createSnapshot() {
   const ret = {};
   for (const c of Object.keys(handles)) {
     console.debug('snapping', c);
-    const char = await service.getCharacteristic(key2uuid(c));
+    const char = await service.getCharacteristic(key2uuid(c)).catch(e=>{
+      console.error('failed getting characteristic for', uuid, e);
+    });
+    if (!char) return;
     console.debug('got', char, 'for snapping');
     const value = await char.readValue();
     console.debug('got value for', c);
@@ -114,7 +117,10 @@ export async function watchCharacteristic(uuid, cb) {
 async function setupWatchCharacteristic(uuid) {
   const createdService = service;
   console.debug('Getting Characteristic ', uuid);
-  const char = await service.getCharacteristic(key2uuid(uuid));
+  const char = await service.getCharacteristic(key2uuid(uuid)).catch(e=>{
+    console.error('failed getting characteristic for', uuid, e);
+  });
+  if (!char) return;
   console.debug('Got Characteristic ', char);
 
   let fallbackInterval;

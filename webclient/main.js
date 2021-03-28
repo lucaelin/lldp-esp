@@ -1,4 +1,4 @@
-import './mock/ble.js';
+//import './mock/ble.js';
 
 import {html, render} from 'https://unpkg.com/lit-html?module';
 import {until} from 'https://unpkg.com/lit-html/directives/until.js?module';
@@ -18,6 +18,7 @@ import tile, {createTileContainer} from './ui/tile.js';
 import helpUi from './ui/help.js';
 import ethUi from './ui/eth.js';
 import lldpUi from './ui/lldp.js';
+import stpUi from './ui/stp.js';
 
 const bleService = 0x00FF;
 
@@ -38,7 +39,7 @@ const bleStatus = {
 // Object.keys(historyValues).map(k=>[k, historyValues.removeItem(k)]);
 
 const bleContainer = createTileContainer('BLE');
-const characteristics = [ethUi, lldpUi].map(c=>({
+const characteristics = [ethUi, lldpUi, stpUi].map(c=>({
   ...c,
   value: typeof c.uuid === 'object' ?
     Object.fromEntries(Object.entries(c.uuid).map(([k,v])=>
@@ -118,6 +119,7 @@ function setBleStatus(status, snapshotName) {
 async function connect() {
   setBleStatus(bleStatus.connecting);
   const device = await connectDevice(bleService).catch(e=>{
+    console.error(e);
     setBleStatus(bleStatus.failed);
   });
   if (!device) return;

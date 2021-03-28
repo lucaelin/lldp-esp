@@ -1,24 +1,11 @@
-const dvSlice = (dv, begin=0, end=undefined) => {
-  if (end === undefined) end = dv.byteLength;
-  return new DataView(dv.buffer.slice(begin, end))
-}
-
-const getMac = (packet) => {
-  return [0,1,2,3,4,5].map((v)=>('00'+packet.getUint8(v).toString(16)).slice(-2)).join(':')
-}
-const getHex = (packet) => {
-  return new Array(packet.byteLength).fill(0).map((v,i)=>('00'+packet.getUint8(i).toString(16)).slice(-2)).join('-');
-}
-const getString = (packet) => {
-  const decoder = new TextDecoder('utf-8');
-  return decoder.decode(packet);
-}
-const getIPv4 = (packet) => {
-  return [0,1,2,3].map((v)=>packet.getUint8(v).toString()).join('.')
-}
-const getIPv6 = (packet) => {
-  return Array(8).fill(0).map((v, i)=>packet.getUint16(i*2).toString(16)).join(':')
-}
+import {
+  dvSlice,
+  getMac,
+  getHex,
+  getString,
+  getIPv4,
+  getIPv6,
+} from './packet.js';
 
 const parseTlvValue = {
   0x01: ['Chassis ID', (packet) => {
