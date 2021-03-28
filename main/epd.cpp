@@ -36,7 +36,6 @@
 
 #define COLORED     1
 #define UNCOLORED   0
-#define EPD_REFRESH_TIMEOUT 8000
 
 static const char *TAG = "EPD";
 
@@ -78,11 +77,12 @@ const uint64_t* epd_getIcon(epd_icon icon, uint8_t value) {
         case epd_icon_ethernet: return icon_ethernet;
         case epd_icon_power:    return icon_power;
         case epd_icon_battery:  switch(value) {
-            case 04: return icon_battery4;
-            case 03: return icon_battery3;
-            case 02: return icon_battery2;
-            case 01: return icon_battery1;
-            case 00: return icon_battery0;
+            case 06: return icon_battery4;
+            case 05: return icon_battery4;
+            case 04: return icon_battery3;
+            case 03: return icon_battery2;
+            case 02: return icon_battery1;
+            case 01: return icon_battery0;
             default: return icon_none;
         }
 

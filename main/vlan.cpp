@@ -2,6 +2,7 @@
 #include "gatts_webble.h"
 #include "epd.h"
 #include "esp_log.h"
+#include <algorithm>
 
 static const char *TAG = "vlan";
 
@@ -62,7 +63,23 @@ void ethertype_vlan_handler(const eth_frame *frame) {
         uint8_t* vlan_list = list_vlan_id_seen();
         ESP_LOG_BUFFER_HEXDUMP(TAG, vlan_list, num_vlan_id_seen * 3, ESP_LOG_INFO);
         gatts_webble_set_and_notify_value(IDX_CHAR_VAL_VLAN, num_vlan_id_seen * 3, (uint8_t*)vlan_list);
+
+        uint16_t len = std::min(num_vlan_id_seen * 6, 50);
+        char* string = (char*)malloc(len);
+        uint16_t offset = 0;
+        for (uint16_t i = 0; i < len; i++) string[i] = ' ';
+        for (uint16_t i = 0; i < num_vlan_id_seen && offset < len; i++) {
+            //ESP_LOGI(TAG, "printing VLAN %d, %d, %x", i, vlan_list[i * 3] * 0x100 + vlan_list[i * 3 + 1], vlan_list[i * 3 + 2]);
+            if (!(vlan_list[i * 3 + 2] & 0x7E)) continue;
+            offset += snprintf(&(string[offset]), len - offset, ", %d", vlan_list[i * 3] * 0x100 + vlan_list[i * 3 + 1]);
+        }
+        if (offset < len) string[offset] = ' ';
+        epd_setLine(epd_line_vlans, "VLANs", 5, &(string[2]), len-2);
+
+        free(string);
         free(vlan_list);
+
+        epd_update();
     }
 }
 
@@ -73,4 +90,6 @@ void ethertype_vlan_reset() {
 
     uint8_t reset[] = {0};
     gatts_webble_set_and_notify_value(IDX_CHAR_VAL_VLAN, sizeof(uint8_t), reset);
+
+    epd_clearLine(epd_line_vlans);
 }

@@ -36,6 +36,7 @@
 // Display resolution
 #define EPD_WIDTH       152
 #define EPD_HEIGHT      296
+#define EPD_REFRESH_TIMEOUT 5000
 
 #define UWORD   unsigned int
 #define UBYTE   unsigned char

@@ -36,6 +36,7 @@
 // Display resolution
 #define EPD_WIDTH       200
 #define EPD_HEIGHT      200
+#define EPD_REFRESH_TIMEOUT 8000
 
 // EPD1IN54B commands
 
