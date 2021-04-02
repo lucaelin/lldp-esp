@@ -12,12 +12,12 @@ eth_frame last_lldp_frame;
 void lldp_tlv_handler(const lldp_tlv *tlv) {
     switch (tlv->type) {
         case 0x00:
-            epd_update();
+            //epd_update();
         break;
         case 0x01:
             switch (tlv->data[0]) {
                 case 0x04:
-                    epd_setLine(epd_line_switchname, "Chassis ID", "%02X%02X%02X%02X%02X%02X",
+                    epd_setLine(epd_line_switchname, "Chassis ID", "%02x:%02x:%02x:%02x:%02x:%02x",
                                 tlv->data[1], tlv->data[2], tlv->data[3], tlv->data[4], tlv->data[5], tlv->data[6]);
                 break;
                 default:
@@ -28,7 +28,7 @@ void lldp_tlv_handler(const lldp_tlv *tlv) {
         case 0x02:
             switch (tlv->data[0]) {
                 case 0x03:
-                    epd_setLine(epd_line_switchport, "Port ID", "%02X%02X%02X%02X%02X%02X",
+                    epd_setLine(epd_line_switchport, "Port ID", "%02x:%02x:%02x:%02x:%02x:%02x",
                                 tlv->data[1], tlv->data[2], tlv->data[3], tlv->data[4], tlv->data[5], tlv->data[6]);
                 break;
                 default:

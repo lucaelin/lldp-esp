@@ -36,7 +36,6 @@ uint8_t eth_gatts_value[3] = {0x00, 0x00, 0x00};
 #define BATT_V_MIN      1452.0
 
 static bool power_event_handler() {
-
     adc1_config_width(ADC_WIDTH_BIT_12);
     adc1_config_channel_atten(CONFIG_POWER_BATTERY_LEVEL_CHANNEL, ADC_ATTEN_DB_11);
 
@@ -57,9 +56,8 @@ static bool power_event_handler() {
     eth_gatts_value[1] = power;
     epd_setIcon(epd_icon_power, power);
     gatts_webble_set_and_notify_value(IDX_CHAR_VAL_ETH, sizeof(eth_gatts_value), eth_gatts_value);
-    epd_update();
-
-    return true;
+    //epd_update();
+    return !!power;
 }
 
 /** Event handler for Ethernet events */
@@ -102,7 +100,7 @@ static void eth_event_handler(void *arg, esp_event_base_t event_base,
     break;
     }
     power_event_handler();
-    epd_update();
+    //epd_update();
     gatts_webble_set_and_notify_value(IDX_CHAR_VAL_ETH, sizeof(eth_gatts_value), eth_gatts_value);
 }
 
@@ -159,6 +157,19 @@ static esp_err_t eth_frame_handler(esp_eth_handle_t eth_handle, uint8_t *buffer,
 
     free(buffer);
     return ESP_OK;
+}
+
+static void paint_event_schedule(void) {
+    while(true) {
+        epd_update();
+        vTaskDelay( pdMS_TO_TICKS( 2 * 1000 ) );
+    }
+}
+static void power_event_schedule(void) {
+    while(true) {
+        power_event_handler();
+        vTaskDelay( pdMS_TO_TICKS( 30 * 1000 ) );
+    }
 }
 
 extern "C" void app_main(void)
@@ -230,11 +241,9 @@ extern "C" void app_main(void)
     /* start Ethernet driver state machine */
     ESP_ERROR_CHECK(esp_eth_start(eth_handle));
 
-    uint32_t schedules = 0;
-    while (true) {
-        if (!(schedules % 10)) power_event_handler(); // every ~10 seconds
-
-        vTaskDelay( pdMS_TO_TICKS( 1000 ) );
-        schedules++;
-    }
+    static uint8_t ucParameterToPass;
+    TaskHandle_t powerHandle = NULL;
+    TaskHandle_t paintHandle = NULL;
+    xTaskCreate( (TaskFunction_t)power_event_schedule, "power_schedule", 4096, &ucParameterToPass, tskIDLE_PRIORITY, &powerHandle );
+    xTaskCreate( (TaskFunction_t)paint_event_schedule, "paint_schedule", 4096, &ucParameterToPass, tskIDLE_PRIORITY, &paintHandle );
 }

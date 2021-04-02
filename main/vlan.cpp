@@ -79,7 +79,7 @@ void ethertype_vlan_handler(const eth_frame *frame) {
         free(string);
         free(vlan_list);
 
-        epd_update();
+        //epd_update();
     }
 }
 
