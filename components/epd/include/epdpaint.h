@@ -50,9 +50,12 @@ public:
     void DrawAbsolutePixel(int x, int y, int colored);
     void DrawPixel(int x, int y, int colored);
     void DrawImageAt(int x, int y, const uint64_t* data, uint8_t width, uint8_t height);
-    void DrawCharAt(int x, int y, char ascii_char, sFONT* font, int colored);
+    uint8_t DrawCharAt(int x, int y, char ascii_char, sFONT* font, int colored);
+    uint8_t DrawCharAt(int x, int y, char ascii_char, sPFONT* font, int colored);
     void DrawStringAt(int x, int y, const char* text, sFONT* font, int colored);
+    void DrawStringAt(int x, int y, const char* text, sPFONT* font, int colored);
     void DrawStringBufferAt(int x, int y, const char* text, uint32_t length, sFONT* font, int colored);
+    void DrawStringBufferAt(int x, int y, const char* text, uint32_t length, sPFONT* font, int colored);
     void DrawLine(int x0, int y0, int x1, int y1, int colored);
     void DrawHorizontalLine(int x, int y, int width, int colored);
     void DrawVerticalLine(int x, int y, int height, int colored);

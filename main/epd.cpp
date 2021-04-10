@@ -136,13 +136,13 @@ void epd_update() {
         }
     }
 
-    uint8_t blockheight = Font12.Height + Font16.Height;
+    uint8_t blockheight = PropFont12.Height + PropFont14.Height + 2;
 
     for (uint8_t line = 0; line < epd_num_lines; line++) {
         uint32_t idx = line * len_of_keyval;
 
-        paint_black.DrawStringBufferAt(4, 8 + blockheight * line, &old_keys[idx], len_of_keyval, &Font12, COLORED);
-        paint_red.DrawStringBufferAt(8, 8 + Font12.Height + blockheight * line, &old_values[idx], len_of_keyval, &Font16, COLORED);
+        paint_black.DrawStringBufferAt(2, 2 + blockheight * line, &old_keys[idx], len_of_keyval, &PropFont12, COLORED);
+        paint_red.DrawStringBufferAt(6, 2 + PropFont12.Height + blockheight * line, &old_values[idx], len_of_keyval, &PropFont14, COLORED);
     }
 
     epd.DisplayFrame(frame_black, frame_red);

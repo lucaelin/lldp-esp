@@ -65,6 +65,17 @@ extern sFONT Font16;
 extern sFONT Font12;
 extern sFONT Font8;
 
+typedef struct _tPFont
+{
+    const uint8_t *table;
+    uint16_t Width;
+    uint16_t Height;
+    uint8_t Header;
+} sPFONT;
+
+extern sPFONT PropFont14;
+extern sPFONT PropFont12;
+
 #ifdef __cplusplus
 }
 #endif

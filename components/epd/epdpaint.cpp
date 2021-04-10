@@ -165,7 +165,7 @@ void Paint::DrawImageAt(int x, int y, const uint64_t* data, uint8_t width, uint8
 /**
  *  @brief: this draws a charactor on the frame buffer but not refresh
  */
-void Paint::DrawCharAt(int x, int y, char ascii_char, sFONT* font, int colored) {
+uint8_t Paint::DrawCharAt(int x, int y, char ascii_char, sFONT* font, int colored) {
     if (ascii_char < 32) ascii_char = '?';
     if (ascii_char > 126) ascii_char = '?';
     int i, j;
@@ -185,6 +185,37 @@ void Paint::DrawCharAt(int x, int y, char ascii_char, sFONT* font, int colored) 
             ptr++;
         }
     }
+
+    return font->Width;
+}
+/**
+ *  @brief: this draws a charactor on the frame buffer but not refresh
+ */
+uint8_t Paint::DrawCharAt(int x, int y, char ascii_char, sPFONT* font, int colored) {
+    if (ascii_char < 32) ascii_char = '?';
+    if (ascii_char > 126) ascii_char = '?';
+    int i, j;
+    char offset = (ascii_char - ' ');
+    unsigned int char_offset = font->Header*offset + offset * font->Height * (font->Width / 8 + (font->Width % 8 ? 1 : 0));
+    uint8_t char_width = font->table[char_offset];
+    uint8_t char_dense = font->table[char_offset + 1];
+    const unsigned char* ptr = &font->table[char_offset + font->Header];
+
+    for (j = 0; j < font->Height; j++) {
+        for (i = 0; i < font->Width; i++) {
+            if (*ptr & (0x80 >> (i % 8))) {
+                DrawPixel(x + i, y + j, colored);
+            }
+            if (i % 8 == 7) {
+                ptr++;
+            }
+        }
+        if (font->Width % 8 != 0) {
+            ptr++;
+        }
+    }
+
+    return char_width - char_dense;
 }
 
 /**
@@ -198,14 +229,35 @@ void Paint::DrawStringAt(int x, int y, const char* text, sFONT* font, int colore
     /* Send the string character by character on EPD */
     while (*p_text != 0) {
         /* Display one character on EPD */
-        DrawCharAt(refcolumn, y, *p_text, font, colored);
+        uint8_t width = DrawCharAt(refcolumn, y, *p_text, font, colored);
         /* Decrement the column position by 16 */
-        refcolumn += font->Width;
+        refcolumn += width;
         /* Point on the next character */
         p_text++;
         counter++;
     }
 }
+
+/**
+*  @brief: this displays a string on the frame buffer but not refresh
+*/
+void Paint::DrawStringAt(int x, int y, const char* text, sPFONT* font, int colored) {
+    const char* p_text = text;
+    unsigned int counter = 0;
+    int refcolumn = x;
+
+    /* Send the string character by character on EPD */
+    while (*p_text != 0) {
+        /* Display one character on EPD */
+        uint8_t width = DrawCharAt(refcolumn, y, *p_text, font, colored);
+        /* Decrement the column position by 16 */
+        refcolumn += width;
+        /* Point on the next character */
+        p_text++;
+        counter++;
+    }
+}
+
 /**
 *  @brief: this displays a string on the frame buffer but not refresh
 */
@@ -220,6 +272,26 @@ void Paint::DrawStringBufferAt(int x, int y, const char* text, uint32_t length, 
         DrawCharAt(refcolumn, y, *p_text, font, colored);
         /* Decrement the column position by 16 */
         refcolumn += font->Width;
+        /* Point on the next character */
+        p_text++;
+        counter++;
+    }
+}
+
+/**
+*  @brief: this displays a string on the frame buffer but not refresh
+*/
+void Paint::DrawStringBufferAt(int x, int y, const char* text, uint32_t length, sPFONT* font, int colored) {
+    const char* p_text = text;
+    unsigned int counter = 0;
+    int refcolumn = x;
+
+    /* Send the string character by character on EPD */
+    while (counter < length) {
+        /* Display one character on EPD */
+        uint8_t width = DrawCharAt(refcolumn, y, *p_text, font, colored);
+        /* Decrement the column position by 16 */
+        refcolumn += width;
         /* Point on the next character */
         p_text++;
         counter++;
