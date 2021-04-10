@@ -11,13 +11,13 @@ eth_frame last_lldp_frame;
 
 void lldp_tlv_handler(const lldp_tlv *tlv) {
     switch (tlv->type) {
-        case 0x00:
+        case TLV_LLDP_END:
             //epd_update();
         break;
-        case 0x01:
+        case TLV_CHASSIS_ID:
             switch (tlv->data[0]) {
                 case 0x04:
-                    epd_setLine(epd_line_switchname, "Chassis ID", "%02x:%02x:%02x:%02x:%02x:%02x",
+                    epd_setLine(epd_line_switchaddr, "Switch Addr", "%02x:%02x:%02x:%02x:%02x:%02x",
                                 tlv->data[1], tlv->data[2], tlv->data[3], tlv->data[4], tlv->data[5], tlv->data[6]);
                 break;
                 default:
@@ -25,7 +25,7 @@ void lldp_tlv_handler(const lldp_tlv *tlv) {
                 break;
             }
         break;
-        case 0x02:
+        case TLV_PORT_ID:
             switch (tlv->data[0]) {
                 case 0x03:
                     epd_setLine(epd_line_switchport, "Port ID", "%02x:%02x:%02x:%02x:%02x:%02x",
@@ -36,13 +36,13 @@ void lldp_tlv_handler(const lldp_tlv *tlv) {
                 break;
             }
         break;
-        case 0x04:
-            epd_setLine(epd_line_switchport, "Port description", 16, (char*)tlv->data, tlv->len);
+        case TLV_PORT_DESC:
+            epd_setLine(epd_line_switchport, "Port Description", 16, (char*)tlv->data, tlv->len);
         break;
-        case 0x05:
-            epd_setLine(epd_line_switchname, "System name", 11, (char*)tlv->data, tlv->len);
+        case TLV_SYSTEM_NAME:
+            epd_setLine(epd_line_switchname, "System Name", 11, (char*)tlv->data, tlv->len);
         break;
-        case 0x7f: // Vendor specific
+        case TLV_VENDOR_SPEC: // Vendor specific
             switch ((tlv->data[0] << 24) + (tlv->data[1] << 16) + (tlv->data[2] << 8) + tlv->data[3]) {
                 case 0x0080c201:
                     epd_setLine(epd_line_vlan, "Port VLAN", "%u", (tlv->data[4] << 8) + tlv->data[5]);
@@ -70,6 +70,9 @@ void ethertype_lldp_handler(const eth_frame *frame) {
 
     gatts_webble_set_and_notify_value(IDX_CHAR_VAL_LLDP, frame->length, frame->payload);
     ethertype_vlan_reset();
+
+    epd_setLine(epd_line_switchaddr, "Switch Addr", "%02x:%02x:%02x:%02x:%02x:%02x",
+                frame->src[0], frame->src[1], frame->src[2], frame->src[3], frame->src[4], frame->src[5]);
 
     lldp_tlv packet;
     packet.type = 1;

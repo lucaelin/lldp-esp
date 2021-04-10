@@ -7,6 +7,7 @@
 #include <stdarg.h>
 
 typedef enum epd_line {
+    epd_line_switchaddr,
     epd_line_switchname,
     epd_line_switchport,
     epd_line_vlan,

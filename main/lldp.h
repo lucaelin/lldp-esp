@@ -12,6 +12,18 @@ typedef struct {
    uint8_t* data;
 } lldp_tlv;
 
+#define TLV_LLDP_END        0x00
+#define TLV_CHASSIS_ID      0x01
+#define TLV_PORT_ID         0x02
+#define TLV_TIME_TO_LIVE    0x03
+#define TLV_PORT_DESC       0x04
+#define TLV_SYSTEM_NAME     0x05
+#define TLV_SYSTEM_DESC     0x06
+#define TLV_SYSTEM_CAP      0x07
+#define TLV_MGMT_ADDR       0x08
+
+#define TLV_VENDOR_SPEC     0x7F
+
 /* 1. Chassis ID
   1. entPhysicalAlias for chassis
   2. ifAlias for an interface

@@ -74,7 +74,7 @@ void ethertype_vlan_handler(const eth_frame *frame) {
             offset += snprintf(&(string[offset]), len - offset, ", %d", vlan_list[i * 3] * 0x100 + vlan_list[i * 3 + 1]);
         }
         if (offset < len) string[offset] = ' ';
-        epd_setLine(epd_line_vlans, "VLANs", 5, &(string[2]), len-2);
+        epd_setLine(epd_line_vlans, "Detected VLANs", 14, &(string[2]), len-2);
 
         free(string);
         free(vlan_list);

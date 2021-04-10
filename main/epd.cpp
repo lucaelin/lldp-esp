@@ -93,7 +93,7 @@ const uint64_t* epd_getIcon(epd_icon icon, uint8_t value) {
 
 void epd_update() {
     if (!init_complete) epd_init();
-    ESP_LOGI(TAG, "Draw started");
+    //ESP_LOGI(TAG, "Draw started");
     int64_t time = esp_timer_get_time();
 
     if (time < last_update + 5 * 1000 * 1000) {
@@ -106,7 +106,7 @@ void epd_update() {
         return epd_update();
     }
     if (!bufferChanged() && !schedule_update) {
-        ESP_LOGI(TAG, "Draw not required");
+        //ESP_LOGI(TAG, "Draw not required");
         return;
     }
 
@@ -116,7 +116,7 @@ void epd_update() {
     ESP_LOGI(TAG, "Draw sleeping a little");
     // epapers are slow, so lets wait another two second because update requests might come in packs
     vTaskDelay(2000 / portTICK_PERIOD_MS);
-    ESP_LOGI(TAG, "Draw actually starting now");
+    ESP_LOGI(TAG, "Draw starting now");
 
     schedule_update = false;
 
@@ -128,7 +128,7 @@ void epd_update() {
     paint_black.Clear(UNCOLORED);
     paint_red.Clear(UNCOLORED);
 
-    paint_black.DrawImageAt(epd.width - 58, epd.height - 58, icon_logo, 58, 58);
+    paint_black.DrawImageAt(epd.width - 59, epd.height - 59, icon_logo, 58, 58);
 
     for (uint8_t icon = 0; icon < epd_num_icons; icon++) {
         if (old_icons[icon]) {
