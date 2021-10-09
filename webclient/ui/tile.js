@@ -1,5 +1,5 @@
-import {html} from 'https://unpkg.com/lit-html?module';
-import {classMap} from 'https://unpkg.com/lit-html/directives/class-map.js?module';
+import {html} from 'https://unpkg.com/lit-html@1.4.1?module';
+import {classMap} from 'https://unpkg.com/lit-html@1.4.1/directives/class-map.js?module';
 
 export function createTileContainer(name) {
   const dom = document.createElement('div');

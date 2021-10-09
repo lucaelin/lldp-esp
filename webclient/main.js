@@ -1,8 +1,8 @@
 //import './mock/ble.js';
 
-import {html, render} from 'https://unpkg.com/lit-html?module';
-import {until} from 'https://unpkg.com/lit-html/directives/until.js?module';
-import {live} from 'https://unpkg.com/lit-html/directives/live.js?module';
+import {html, render} from 'https://unpkg.com/lit-html@1.4.1?module';
+import {until} from 'https://unpkg.com/lit-html@1.4.1/directives/until.js?module';
+import {live} from 'https://unpkg.com/lit-html@1.4.1/directives/live.js?module';
 import {connectDevice, disconnect, watchCharacteristic, canReconnect} from './ble.js';
 import {
   saveSnapshot,

@@ -1,4 +1,4 @@
-import {html} from 'https://unpkg.com/lit-html?module';
+import {html} from 'https://unpkg.com/lit-html@1.4.1?module';
 import tile from './tile.js';
 
 const helptext = html`
